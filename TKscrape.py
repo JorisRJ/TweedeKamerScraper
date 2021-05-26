@@ -1,42 +1,9 @@
+import ArangoDBParser
 from typing import ByteString, Iterable
 from bs4 import BeautifulSoup
 import time
 from selenium import webdriver
-from dataclasses import dataclass
-import urllib.request
-
-#dataclasses voor overzicht van de info
-@dataclass
-class Kamerlid:
-    naam: str
-    partij: str
-    woonplaats: str
-    leeftijd: str
-    anc: str
-    link: str
-    img: str
-    id: int
-
-@dataclass
-class Partij:
-    naam: str
-    zetels: str
-    voorzitter: str
-    voorzitterId: int
-    afkorting: str
-
-@dataclass
-class Motie:
-    id: str
-    indiener: str
-    steuners: list 
-    info: str
-    datum: str
-
-@dataclass
-class Commissie:
-    naam: str
-    leden: list 
+import DataTypes
 
 #Global vars
 drv = webdriver.Firefox()
@@ -47,15 +14,15 @@ kamerlidMap = {}
 #Houd de moties bij op basis van id
 motieMap = {}
 
-#Houd de partij afkortingen bij als kamerlid -> afkorting partij
+#Houd de partij afkortingen bij als naam kamerlid -> afkorting partij
 partijMap = {}
 
 #De functies om de dataclasses om te zetten
-def kamerLidToJSON(k: Kamerlid):
+def kamerLidToJSON(k: DataTypes.Kamerlid):
     s = "{\n\t\"naam\":\"" + k.naam + "\",\n\t\"partij\":\"" + k.partij + "\",\n\t\"woonplaats\":\"" + k.woonplaats + "\",\n\t\"leeftijd\":" + k.leeftijd.split(" ")[0] + ",\n\t\"anc\":" + k.anc.split(" ")[0] + ",\n\t\"id\":" + str(k.id) + ",\n\t\"img\":\"" + k.img  + "\"\n}"
     return (s.encode('utf-8').decode('ascii', 'ignore'))
 
-def commissieToJSON(com: Commissie):
+def commissieToJSON(com: DataTypes.Commissie):
     s = "{\n\t\"commissie\":\"" + str(com.naam) + "\",\n\t\"leden\": ["
     notFirst = False
     for lid in com.leden:
@@ -66,12 +33,12 @@ def commissieToJSON(com: Commissie):
     s = s +"]\n}"
     return (s.encode('utf-8').decode('ascii', 'ignore'))
 
-def partijToJSON(p: Partij):
+def partijToJSON(p: DataTypes.Partij):
     s = "{\n\t\"naam\":\"" + p.naam + "\",\n\t\"zetels\":" + p.zetels + ",\n\t\"voorzitter\":\"" + p.voorzitter + "\",\n"
     s += "\t\"voorzitterId\":" + p.voorzitterId + ",\n\t\"afkorting\":\"" + p.afkorting + "\"\n}"
     return (s.encode('utf-8').decode('ascii', 'ignore'))
 
-def motieToJSON(m: Motie):
+def motieToJSON(m: DataTypes.Motie):
     s = "{\n\t\"id\":\"" + m.id + "\",\n\t\"indiener\":\""+ m.indiener + "\",\n\t\"steuners\": ["
     notFirst = False
     for lid in m.steuners:
@@ -122,7 +89,7 @@ def getKamerlid(soup: BeautifulSoup, x: int):
         leeftijd = tab[3].get_text()
         anc = tab[5].get_text()
 
-    k = Kamerlid(naam, partij, woonplaats, leeftijd, anc, link, img, x)
+    k = DataTypes.Kamerlid(naam, partij, woonplaats, leeftijd, anc, link, img, x)
     return k
 
 #Pakt per kamerlid de container met de commissies
@@ -134,6 +101,7 @@ def getAllCommissies(kamerleden):
         site = drv.execute_script("return document.documentElement.outerHTML")
         soup = BeautifulSoup(site, "html.parser")
         getCommissies(soup, k.id, commissies)
+        print(".", end = "", flush = True)
 
     return commissies
 
@@ -148,7 +116,7 @@ def getCommissies(soup: BeautifulSoup, x: int, commissies: dict):
     for com in coms:
         naam = com.get_text()
         if not (naam in commissies):
-            commissies[naam] = Commissie(naam, [x])
+            commissies[naam] = DataTypes.Commissie(naam, [x])
         else:
             commissies[naam].leden.append(x) 
 
@@ -174,7 +142,7 @@ def getPartij(soup: BeautifulSoup):
     voorzId = str(kamerlidMap[voorz])
     afkrt = partijMap[voorz]
 
-    p = Partij(naam, zetels, voorz, voorzId, afkrt)
+    p = DataTypes.Partij(naam, zetels, voorz, voorzId, afkrt)
     return p
 
 #Gaat per kamerlid naar de "Alle moties" pagina en pakt vervolgens alle moties van de eerste pagina
@@ -207,6 +175,7 @@ def getAllMoties(kamerleden):
         nsoup = BeautifulSoup(nsite, "html.parser")
         
         getMoties(nsoup, k.naam)
+        print(".", end = "", flush = True)
         
 def getMoties(soup: BeautifulSoup, knaam: str):
     cards = soup.find_all("article", class_="card ___icon-right")
@@ -229,13 +198,18 @@ def getMoties(soup: BeautifulSoup, knaam: str):
                 motieMap[id].steuners.append(kamerlidMap[knaam])
             continue
 
+        #Voeg de indiener toe aan de steuners, helpt met parsen voor arangoDB data
+        steuners = []
+        if indiener in kamerlidMap:
+                steuners.append(kamerlidMap[knaam])
+
         datum = card.find("div", class_="card__pretitle").get_text()
         info = card.find("p").get_text().replace("\"","'")
-        motie = Motie(id, indiener, [], info, datum)
+        motie = DataTypes.Motie(id, indiener, [], info, datum)
         motieMap[id] = motie   
 
 #Korte functie die alle verwijzingen man
-def putKamerlidInMap(k: Kamerlid):
+def putKamerlidInMap(k: DataTypes.Kamerlid):
     kamerlidMap[k.link] = k.naam
     kamerlidMap[k.naam] = k.id
     kamerlidMap[k.id] = k.naam
@@ -266,7 +240,7 @@ def Main():
 
     coms = getAllCommissies(km)
     writeToFile(coms.values(), "commissies", commissieToJSON)
-    print("Commissies gescraped")
+    print("\nCommissies gescraped")
 
     ptn = getAllPartijen()
     writeToFile(ptn, "partijen", partijToJSON)
@@ -274,6 +248,13 @@ def Main():
 
     getAllMoties(km)
     writeToFile(motieMap.values(), "moties", motieToJSON)
-    print("Moties gescraped")
+    print("\nMoties gescraped")
+
+    # Parse naar arangodb format
+    ArangoDBParser.handleKamerledenAndPartijen(km, ptn)
+    ArangoDBParser.handleKamerledenToCommissies(coms.values())
+    ArangoDBParser.handleKamerledenToMoties(motieMap.values())
+    print("ArangoDB JSON files written")
+    
 
 Main()
