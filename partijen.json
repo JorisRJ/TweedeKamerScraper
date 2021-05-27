@@ -3,21 +3,21 @@
 	"naam":"Volkspartij voor Vrijheid en Democratie",
 	"zetels":  34,
 	"voorzitter":"Mark Rutte",
-	"voorzitterId":118,
+	"voorzitterId":117,
 	"afkorting":"VVD"
 },
 {
 	"naam":"Democraten 66",
 	"zetels":  24,
-	"voorzitter":"Sigrid Kaag",
-	"voorzitterId":69,
+	"voorzitter":"Rob Jetten",
+	"voorzitterId":66,
 	"afkorting":"D66"
 },
 {
 	"naam":"Partij voor de Vrijheid",
 	"zetels":  17,
 	"voorzitter":"Geert Wilders",
-	"voorzitterId":145,
+	"voorzitterId":144,
 	"afkorting":"PVV"
 },
 {
@@ -38,7 +38,7 @@
 	"naam":"Partij van de Arbeid",
 	"zetels":  9,
 	"voorzitter":"Lilianne Ploumen",
-	"voorzitterId":112,
+	"voorzitterId":111,
 	"afkorting":"PvdA"
 },
 {
@@ -52,14 +52,14 @@
 	"naam":"Partij voor de Dieren",
 	"zetels":  6,
 	"voorzitter":"Esther Ouwehand",
-	"voorzitterId":104,
+	"voorzitterId":103,
 	"afkorting":"PvdD"
 },
 {
 	"naam":"ChristenUnie",
 	"zetels":  5,
 	"voorzitter":"Gert-Jan Segers",
-	"voorzitterId":120,
+	"voorzitterId":119,
 	"afkorting":"CU"
 },
 {
@@ -87,7 +87,7 @@
 	"naam":"Staatkundig Gereformeerde Partij",
 	"zetels":  3,
 	"voorzitter":"Kees van der Staaij",
-	"voorzitterId":126,
+	"voorzitterId":125,
 	"afkorting":"SGP"
 },
 {
@@ -108,14 +108,14 @@
 	"naam":"BoerBurgerBeweging",
 	"zetels":  1,
 	"voorzitter":"Caroline van der Plas",
-	"voorzitterId":111,
+	"voorzitterId":110,
 	"afkorting":"BBB"
 },
 {
 	"naam":"BIJ1",
 	"zetels":  1,
 	"voorzitter":"Sylvana Simons",
-	"voorzitterId":121,
+	"voorzitterId":120,
 	"afkorting":"BIJ1"
 },
 {

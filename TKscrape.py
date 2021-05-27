@@ -58,7 +58,11 @@ def getAllKamerleden():
     sel_soup = BeautifulSoup(html, "html.parser")
 
     #row = sel_soup.find("noscript")
-    cards = sel_soup.find_all("div", class_="member filter-member")[150:300]
+    allcards = sel_soup.find_all("div", class_="member filter-member")
+    
+    #deze exception moest toegevoegd worden omdat Omtzicht zijn functie elders kreeg
+    #en er dus nog maar 149 kamerleden waren
+    cards = allcards[(len(allcards) // 2):]
     
     # Stop de kamerleden in een file
     kamerleden = []
@@ -95,6 +99,7 @@ def getKamerlid(soup: BeautifulSoup, x: int):
 #Pakt per kamerlid de container met de commissies
 def getAllCommissies(kamerleden):
     commissies = {}
+
     for k in kamerleden:
         link = "https://www.tweedekamer.nl" + k.link
         drv.get(link)
@@ -102,6 +107,7 @@ def getAllCommissies(kamerleden):
         soup = BeautifulSoup(site, "html.parser")
         getCommissies(soup, k.id, commissies)
         print(".", end = "", flush = True)
+
 
     return commissies
 
@@ -148,7 +154,7 @@ def getPartij(soup: BeautifulSoup):
 #Gaat per kamerlid naar de "Alle moties" pagina en pakt vervolgens alle moties van de eerste pagina
 #Zou in principe makkelijk schaalbaar moeten zijn over alle pagina's heen, moet je gewoon de
 #"read more next"-link pakken
-def getAllMoties(kamerleden):
+def getAllMoties(kamerleden, getAllPages: bool = False):
     for k in kamerleden:
         link = "https://www.tweedekamer.nl" + k.link
         drv.get(link)
@@ -170,6 +176,9 @@ def getAllMoties(kamerleden):
             continue
         
         nLink = "https://www.tweedekamer.nl" + subpage.find("a", class_="read-more")["href"]
+        if getAllPages:
+            nLink = str(nLink).replace("&dpp=15", "&dpp=1000")
+
         drv.get(nLink)
         nsite = drv.execute_script("return document.documentElement.outerHTML")
         nsoup = BeautifulSoup(nsite, "html.parser")
@@ -205,7 +214,7 @@ def getMoties(soup: BeautifulSoup, knaam: str):
 
         datum = card.find("div", class_="card__pretitle").get_text()
         info = card.find("p").get_text().replace("\"","'")
-        motie = DataTypes.Motie(id, indiener, [], info, datum)
+        motie = DataTypes.Motie(id, indiener, steuners, info, datum)
         motieMap[id] = motie   
 
 #Korte functie die alle verwijzingen man
@@ -236,7 +245,7 @@ def writeToFile(iter, naam: str, parser):
 def Main():
     km = getAllKamerleden()
     writeToFile(km, "kamerleden", kamerLidToJSON)
-    print("Kamerleden gescraped")
+    print("Kamerleden gescraped: ", str(len(km)))
 
     coms = getAllCommissies(km)
     writeToFile(coms.values(), "commissies", commissieToJSON)
@@ -246,7 +255,7 @@ def Main():
     writeToFile(ptn, "partijen", partijToJSON)
     print("Partijen gescraped")
 
-    getAllMoties(km)
+    getAllMoties(km, True)
     writeToFile(motieMap.values(), "moties", motieToJSON)
     print("\nMoties gescraped")
 
